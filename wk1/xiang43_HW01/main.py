@@ -1,16 +1,24 @@
-import Conv2D 
+from conv import Conv2D
 import matplotlib.pyplot as plt
-from skimage import io, transform
+from PIL import Image
 import time
+import torch
+import numpy as np
+from torchvision import transforms, utils
 
-input_img1 = io.imread('1280.jpg')
-input_img2 = io.imread('1920.jpg')
-
+read_img1 = Image.open('1280.jpg')
+read_img2 = Image.open('1920.jpg')
+input_img1 = torch.from_numpy(np.asarray(read_img1))
+input_img2 = torch.from_numpy(np.asarray(read_img2))
 # Part A
 # init task 1
 conv2d = Conv2D(3, 1, 3, 1, 'known')
 op_a, out_1 = conv2d.forward(input_img1)
-out_1.save("out_1.jpg")
+npimg = out_1[:,:,0].numpy()
+im = Image.fromarray(npimg.astype('uint8'))
+im.save("a1.jpg")
+
+'''
 op_a, out_1 = conv2d.forward(input_img2)
 out_2.save("out_2.jpg")
 
@@ -50,3 +58,4 @@ plt.plot(size_list, time_k, 'bo')
 plt.xlabel('kernel size')
 plt.ylabel('time/s')
 fig.savefig('kernel_size_time.png', dpi = fig.dpi)
+'''
