@@ -6,6 +6,11 @@ import torch
 import numpy as np
 from torchvision import transforms, utils
 
+def save_timg(tensor, filename):
+    npimg = tensor.numpy()
+    im = Image.fromarray(npimg.astype('uint8'))
+    im.save(filename)
+    
 read_img1 = Image.open('1280.jpg')
 read_img2 = Image.open('1920.jpg')
 input_img1 = torch.from_numpy(np.asarray(read_img1))
@@ -13,15 +18,32 @@ input_img2 = torch.from_numpy(np.asarray(read_img2))
 # Part A
 # init task 1
 conv2d = Conv2D(3, 1, 3, 1, 'known')
-op_a, out_1 = conv2d.forward(input_img1)
-npimg = out_1[:,:,0].numpy()
-im = Image.fromarray(npimg.astype('uint8'))
-im.save("a1.jpg")
+op_a1, out_1 = conv2d.forward(input_img1)
+save_timg(out_1[:,:,0], 'a1.jpg')
+op_a2, out_2 = conv2d.forward(input_img2)
+save_timg(out_2[:,:,0], 'a2.jpg')
+# task 2
+conv2d = Conv2D(3, 2, 5, 1, 'known')
+op_a3, out_3 = conv2d.forward(input_img1)
+save_timg(out_3[:,:,0], 'a3.jpg')
+save_timg(out_3[:,:,1], 'a4.jpg')
+op_a4, out_4 = conv2d.forward(input_img2)
+save_timg(out_4[:,:,0], 'a5.jpg')
+save_timg(out_4[:,:,1], 'a6.jpg')
+# task 3
+conv2d = Conv2D(3, 3, 3, 2, 'known')
+op_a5, out_5 = conv2d.forward(input_img1)
+save_timg(out_5[:,:,0], 'a7.jpg')
+save_timg(out_5[:,:,1], 'a8.jpg')
+save_timg(out_5[:,:,2], 'a9.jpg')
+op_a6, out_6 = conv2d.forward(input_img2)
+save_timg(out_6[:,:,0], 'a10.jpg')
+save_timg(out_6[:,:,1], 'a11.jpg')
+save_timg(out_6[:,:,2], 'a12.jpg')
 
-'''
 op_a, out_1 = conv2d.forward(input_img2)
 out_2.save("out_2.jpg")
-
+'''
 # Part B
 # init
 time_i = [0.0] * 11
