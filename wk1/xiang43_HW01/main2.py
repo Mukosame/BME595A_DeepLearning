@@ -43,7 +43,6 @@ save_timg(out_6[:,:,0], 'a10.jpg')
 save_timg(out_6[:,:,1], 'a11.jpg')
 save_timg(out_6[:,:,2], 'a12.jpg')
 
-'''
 # Part B
 # init
 time_i = [0.0] * 11
@@ -55,7 +54,6 @@ for i in range(11): # output channel: 2^i
     conv2d = Conv2D(3, 2**i, 3, 1, 'rand')
     op_i[i], out_img = conv2d.forward(input_img1)
     time_i[i] = time.time() - start_time
-    print(time_i[i])
 
 # plot the time taken for the performance as a function of i
 fig = plt.figure()
@@ -70,11 +68,16 @@ size_list = [3, 5, 7, 9, 11]
 time_k = [0.0] * 5
 op_k = [0] * 5
 i = 0
-for kernel_size in range(size_list):
+'''
+for kernel_size in size_list:
     #start_time = time.time()
     conv2d = Conv2D(3, 2, kernel_size, 1, 'rand')
     op_k[i], out_img = conv2d.forward(input_img1)
-    #i = i + 1
+    print(op_k[i])
+    i = i + 1
+    #time_k[kernel_size] = time.time() - start_time
+'''
+op_k = [64232280, 162623648, 303818424, 487247232, 712343000]
 # plot the time taken for the performance as a function of kenel size list
 fig = plt.figure()
 plt.style.use('seaborn-whitegrid')
@@ -83,4 +86,4 @@ plt.xlabel('kernel size')
 plt.ylabel('operations')
 fig.savefig('kernel_size_time.png', dpi = fig.dpi)
 '''
-
+'''
