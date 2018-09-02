@@ -8,7 +8,7 @@ class AND():
         self.layer0 = self.and_nn.getLayer(0)
         self.layer0.fill_(0)
         # update weight
-        self.layer0  += torch.DoubleTensor([[-10],[7],[7]])
+        self.layer0  = torch.DoubleTensor([[-10],[7],[7]])
         
     def forward(self):
         return self.and_nn.forward(torch.DoubleTensor([[self.a], [self.b]]))
