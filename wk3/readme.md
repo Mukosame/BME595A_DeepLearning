@@ -5,7 +5,7 @@ _Neural Networks - Back-propagation pass_
 Xiaoyu Xiang(xiang43@purdue.edu)
 --------------------
 ## Platform and Packages
-- Python 2.7.15, PyTorch 0.4.1
+- Python 3.6.5, PyTorch 0.4.0
 - Numpy
 
 ## Code Implementation
