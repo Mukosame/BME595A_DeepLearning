@@ -16,4 +16,5 @@ print(Or(True, False))#True
 print(Or(False, False))#False
 print(Xor(True, True))#False
 print(Xor(True, False))#True
+print(Xor(False, True)) #True
 print(Xor(False, False))#False

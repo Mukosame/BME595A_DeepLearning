@@ -37,8 +37,8 @@ class NeuralNetwork(object):
         #print(self.middle[str(0)])
         for i in range(len(self.layers) - 1):
             self.middle[str(i)] = torch.cat((bias, self.middle[str(i)]), 0)
-            self.middle[str(i+1)] = torch.mm(torch.t(self.theta[str(i)]), self.middle[str(i)])
-        self.prediction = sigmoid(self.middle[str(len(self.layers)-1)])
+            self.middle[str(i+1)] = sigmoid(torch.mm(torch.t(self.theta[str(i)]), self.middle[str(i)]))
+        self.prediction = self.middle[str(len(self.layers)-1)]
         #print(self.prediction)
         return self.prediction    
     
@@ -63,7 +63,7 @@ class NeuralNetwork(object):
                 temp = torch.index_select(temp, 0, index)
                 #print(temp)
             self.dE_theta[str(i)] = loss_grad * torch.mm(self.middle[str(i)],  torch.t(temp))
-            temp = self.theta[str(i)].mm(temp) # update for next round
+            temp = self.theta[str(i)].mm(temp) * self.middle[str(i)] * (1-self.middle[str(i)]) # update for next round
 
     def updateParams(self, eta):
         for i in range(len(self.layers)-1):

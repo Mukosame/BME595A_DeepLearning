@@ -127,10 +127,10 @@ class XOR():
         self.xornn = NeuralNetwork([2,2,1])
         self.layer10 = self.xornn.getLayer(0)
         #self.layer10.fill_(0)
-        #self.layer10 += torch.FloatTensor([[-5,-5],[6,-6],[-6,6]])
+        #self.layer10 += torch.FloatTensor([[-0.1, -0.1],[0.6,-0.6],[-0.6,0.6]])
         self.layer20 = self.xornn.getLayer(1)
         #self.layer20.fill_(0)
-        #self.layer20 += torch.FloatTensor([[-5],[7],[7]])
+        #self.layer20 += torch.FloatTensor([[-1],[7],[7]])
 
     def forward(self):
         return self.xornn.forward(torch.FloatTensor([[self.a], [self.b]]))
