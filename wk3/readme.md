@@ -130,4 +130,4 @@ XOR Gate:
 | 1 | -2.6235 | 6.1774 | -7.2435 |
 
 When training each gate with SGD, we can see that, the training loss decreases after epochs:
-
+![MSE loss](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk3/loss.jpg "Training Loss")
