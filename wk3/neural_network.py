@@ -15,8 +15,6 @@ class NeuralNetwork(object):
         self.middle = {}
         for i in range(len(self.layers) - 1):
             self.theta[str(i)] = torch.from_numpy(np.random.normal(0, 1/np.sqrt(self.layers[i]), (self.layers[i]+1, self.layers[i+1]))).type(torch.FloatTensor)
-            #self.dE_theta[str(i)] = 0 * self.theta[str(i)]
-            #self.middle[str(i)] = torch.zeros((self.layers[i], 1), dtype = torch.float)
             # input size: layer[i] + one bias node
             # output size: layer[i+1]
         self.loss = 0
