@@ -97,4 +97,35 @@ For each logic gate, the test results are listed in the tables below.
 | False | True    |    True |
 | False | False | False|
 
-Although the results are samw with HW02, the theta used in each gates are different.
+Although the results are same with HW02, the theta used in each gates are different:
+
+The manually set weights are:
+
+| Gate | b | w1 | w2 |
+| ------------- |:-------------:| -----:|-----:|
+| AND | -10 | 7 | 7 |
+| OR | -1 | 7 | 7 |
+| NOT | 5 | -7 | \ |
+
+XOR Gate:
+
+| Layer | b | w1 | w2 |
+| ------------- |:-------------:| -----:|-----:|
+| 0 | [-5, -5] | [6, -6] | [-6, -6] |
+| 1 | -5 | 7 | 7 |
+
+The generated weights after training are:
+| Gate | b | w1 | w2 |
+| ------------- |:-------------:| -----:|-----:|
+| AND | -2.0412 | 1.3731 | 1.0525 |
+| OR | -0.2708 | 1.9155 | 1.3391 |
+| NOT | 1.2683 | -2.7087 | \ |
+
+XOR Gate:
+| Layer | b | w1 | w2 |
+| ------------- |:-------------:| -----:|-----:|
+| 0 | [-5, -5] | [6, -6] | [-6, -6] |
+| 1 | -5 | 7 | 7 |
+
+When training each gate with SGD, we can see that, the training loss decreases after epochs:
+
