@@ -115,6 +115,7 @@ XOR Gate:
 | 1 | -5 | 7 | 7 |
 
 The generated weights after training are:
+
 | Gate | b | w1 | w2 |
 | ------------- |:-------------:| -----:|-----:|
 | AND | -2.0412 | 1.3731 | 1.0525 |
@@ -122,10 +123,11 @@ The generated weights after training are:
 | NOT | 1.2683 | -2.7087 | \ |
 
 XOR Gate:
+
 | Layer | b | w1 | w2 |
 | ------------- |:-------------:| -----:|-----:|
-| 0 | [-5, -5] | [6, -6] | [-6, -6] |
-| 1 | -5 | 7 | 7 |
+| 0 | [5.1251, 1.8911] | [-3.6829, -6.3788] | [-3.6962, -6.4942] |
+| 1 | -2.6235 | 6.1774 | -7.2435 |
 
 When training each gate with SGD, we can see that, the training loss decreases after epochs:
 
