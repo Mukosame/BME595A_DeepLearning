@@ -6,8 +6,19 @@ Xiaoyu Xiang(xiang43@purdue.edu)
 --------------------
 ## Platform and Packages
 - Python 3.6.5 
-- PyTorch 0.4.0
+- PyTorch 0.4.0, torchvision
 - Numpy
+
+## Dataset: MNIST
+To load the dataset, we use the PyTorch MNIST dataloader.
+
+For the MNIST dataset, we separate it into 3 parts: training set(70%), validation set(15%), and test set(15%). During the training process, we expect to see the training loss and validation loss decrease over epochs.
+
+Then we decide the batch size. Batch size decides how many samples would be sent to train. Let the whole sample number of training set be N, and batch size c, so the whole training set is divided into floor(N/c) parts.
+
+We only shuffle the training set's data. For validation set, since the shuffle wouldn't inlfuence the output, we skip the shuffle process.
+
+After one epoch, we will calculate the training error, which should be the average over all training examples(or the average over all batches).
 
 ## Code Implementation
 ### neural_network.py
@@ -47,6 +58,18 @@ By setting it as ```CE```, cross-entropy loss is applied:
 ![Cross-Entropy loss](https://cdn-images-1.medium.com/max/1600/1*gNuP7PN6sC42vAYWvoAMMA.png "Cross Entropy Loss's Formula")
 
 Where p is the ground truth, an q is the network output(or, prediction result).
+
+### myimg2num.py
+This class is used to turn images in mnist (handwritten numbers) into numbers. 
+
+To achieve this, we build a 4-layer neural network. The input of this network is 28x28x1 images, and the output is the probability of 10 classes.
+
+To speed up training, we use the NeuralNetwork API in batch mode. Let c be the batch size, so the network output would be 10 x c. The batch size only influence the backward propagation: instead of calculate the gradient one by one, we calculate the average gradient over all samples in this batch.
+
+
+
+### nnimg2num.py
+This class achieves the same goal as ```myimg2num.py```, but instead of using our homemade neural network, we apply PyTorch's nn package to build the neural network, and realize the optimization step.
 
 
 ## Test Result
