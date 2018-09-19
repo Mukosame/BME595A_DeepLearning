@@ -29,7 +29,9 @@ class NeuralNetwork(object):
         # input is 2D/3D FloatTensor
         # output is FloatTensor
         self.input = input
-        (height, width) = input.size()
+        height = input.size(0)
+        width = input.size(1)
+        print(input.size())
         bias = torch.ones((1,width),dtype = torch.float)
         self.middle[str(0)] = input
         #print(self.middle[str(0)])

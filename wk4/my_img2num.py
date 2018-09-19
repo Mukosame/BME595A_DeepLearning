@@ -13,10 +13,10 @@ class MyImg2Num(object):
         # 2 hidden layers: 512 and 64
         # output layer: 10
         self.mynn = NeuralNetwork([784,512,64,10])
-        self.mynn_model = nn.Sequential(
-            nn.Linear(784, 512), nn.Sigmoid(),
-            nn.Linear(512, 64), nn.Sigmoid(),
-            nn.Linear(64, 10), nn.Sigmoid()
+        self.mynn_model = #nn.Sequential(
+            #nn.Linear(784, 512), nn.Sigmoid(),
+            #nn.Linear(512, 64), nn.Sigmoid(),
+            #nn.Linear(64, 10), nn.Sigmoid()
         )
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.trainset = torchvision.datasets.MNIST(root='./data', train = True, download = True, transform = self.transform)
@@ -24,7 +24,7 @@ class MyImg2Num(object):
         self.testset = torchvision.datasets.MNIST(root = './data', train = False, download = True, transform = self.transform)
         self.testloader = torch.utils.data.DataLoader(self.testset, batch_size = self.batch, shuffle = False, num_workers = 2)
         self.classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
-        self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")#torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
 
     def forward(self, img):
@@ -36,12 +36,6 @@ class MyImg2Num(object):
         return predict_label
 
     def train(self):
-        def onehot(abc):
-            onehot_label = torch.zeros(self.batch, 10)
-            for i in range(self.batch):
-                onehot_label[i][abc[i]] = 1 
-            return onehot_label
-
         train_log = open('./log/my_train_log.txt', 'w')
         learning_rate = 0.1
         max_iteration = 66
@@ -53,6 +47,13 @@ class MyImg2Num(object):
         acc = epoch_loss
         optimizer = torch.optim.SGD(self.mynn_model.parameters(), lr = learning_rate)
         criterion = nn.MSELoss() # returns to the mean loss of a batch
+
+        def onehot(abc):
+            onehot_label = torch.zeros(self.batch, 10)
+            for i in range(batch):
+                onehot_label[i][abc[i]] = 1 
+            return onehot_label
+
         for epoch in range(max_iteration):
             running_loss = 0.0        
             # Train and calculate training loss
