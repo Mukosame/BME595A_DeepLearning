@@ -28,41 +28,48 @@ class NeuralNetwork(object):
             return (1/(1+torch.exp(-a)))
         # input is 2D/3D FloatTensor
         # output is FloatTensor
-        self.input = input.t() # 
-        height = input.size(0)
-        width = input.size(1)
-        print(input.size())
+        # in batch mode: input size = [batch_size, input_length]
+        self.input = torch.t(input) 
+        height = self.input.size(0)
+        width = self.input.size(1)
+        #print(self.input.size())
         bias = torch.ones((1,width), dtype = torch.float)
-        self.middle[str(0)] = input
+        self.middle[str(0)] = self.input
         #print(self.middle[str(0)])
         for i in range(len(self.layers) - 1):
             self.middle[str(i)] = torch.cat((bias, self.middle[str(i)]), 0)
             self.middle[str(i+1)] = sigmoid(torch.mm(torch.t(self.theta[str(i)]), self.middle[str(i)]))
         self.prediction = self.middle[str(len(self.layers)-1)]
         #print(self.prediction)
+        self.prediction = torch.t(self.prediction)
         return self.prediction    
     
     def backward(self, target, lossType):
+        target = torch.t(target)
+        prediction = torch.t(self.prediction)
+        width = target.size(1)
         # computer average gradient across seen samples, doesn't return anything
         if lossType == 'CE':
             # Use CE loss
-            self.loss = torch.log(torch.sum(torch.exp(self.prediction))) - torch.sum(self.prediction.t()*target)
-            loss_grad = self.prediction - target#- target + torch.exp(self.prediction) / torch.sum(torch.exp(self.prediction))
+            self.loss = torch.log(torch.sum(torch.exp(prediction))) - torch.sum(prediction.t()*target)
+            loss_grad = prediction - target#- target + torch.exp(self.prediction) / torch.sum(torch.exp(self.prediction))
         else:
             # Use default MSE loss
-            self.loss = torch.mean((self.prediction - target)**2)
-            loss_grad = 2*(self.prediction - target)/self.output_size # MSE's gradient
+            self.loss = torch.mean((prediction - target)**2)
+            loss_grad = 2*(prediction - target)/self.output_size # MSE's gradient
             #print(self.loss.size())
-            #print(self.prediction)
-        loss_grad = self.prediction * (1-self.prediction) * loss_grad #sigmoid
-        temp = torch.ones((self.output_size, 1), dtype = torch.float)#torch.FloatTensor([1])
+            #print(prediction)
+        temp = prediction * (1-prediction) * loss_grad #sigmoid
+        #print(loss_grad.size())
+        #temp = torch.ones((self.output_size, width), dtype = torch.float)#torch.FloatTensor([1])
         for i in reversed(range(len(self.layers) - 1)):
             #print(self.middle[str(i)], temp)
             if i != (len(self.layers)-2):
-                index = torch.LongTensor([1, 2])
-                temp = torch.index_select(temp, 0, index)
-                #print(temp)
-            self.dE_theta[str(i)] = loss_grad * torch.mm(self.middle[str(i)],  torch.t(temp))
+                # ignore the first bias 
+                #print(temp.size())
+                temp = temp.narrow(0, 1, temp.size(0)-1)
+            #print(self.middle[str(i)].size(), torch.t(temp).size())
+            self.dE_theta[str(i)] = torch.mm(self.middle[str(i)],  torch.t(temp))
             temp = self.theta[str(i)].mm(temp) * self.middle[str(i)] * (1-self.middle[str(i)]) # update for next round
 
     def updateParams(self, eta):

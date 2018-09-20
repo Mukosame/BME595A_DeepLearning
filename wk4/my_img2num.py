@@ -9,6 +9,7 @@ from neural_network import NeuralNetwork
 class MyImg2Num(object):
     def __init__(self):
         # input: 28 x 28 = 784 vector
+        self.img_size = 784
         self.batch = 16
         # 2 hidden layers: 512 and 64
         # output layer: 10
@@ -38,7 +39,7 @@ class MyImg2Num(object):
     def train(self):
         train_log = open('./log/my_train_log.txt', 'w')
         learning_rate = 0.1
-        max_iteration = 66
+        max_iteration = 15
         batch = self.batch # batch size
         #data_num = 60,000
         #val_num = 10,000
@@ -63,14 +64,16 @@ class MyImg2Num(object):
             for i, data in enumerate(self.trainloader, 0):   
                 # each split of batch: i is the batch's index         
                 inputs, raw_labels = data            
-                labels = onehot(raw_labels)            
+                labels = onehot(raw_labels)     
+                #print(labels.size())       
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 # zero the parameter gradients        
-                this_output = self.mynn.forward(inputs.view(batch, 728))
+                this_output = self.mynn.forward(inputs.view(batch, self.img_size))
+                #print(this_output.size())
                 # backward pass
                 self.mynn.backward(labels, None)
                 # after each batch, update weights
-                print(self.mynn.loss)
+                #print(self.mynn.loss)
                 running_loss += self.mynn.loss # output is the mean loss of this batch
                 self.mynn.updateParams(learning_rate)
             epoch_loss[epoch] = float(running_loss) / (i+1)
@@ -84,7 +87,7 @@ class MyImg2Num(object):
                 inputs, raw_labels = data
                 inputs, raw_labels = inputs.to(self.device), raw_labels.to(self.device)
                 labels = onehot(raw_labels) 
-                this_output = self.mynn.forward(inputs.view(batch,728))
+                this_output = self.mynn.forward(inputs.view(batch, self.img_size))
                 _, prediction = torch.max(this_output.data, 1)
                 #c = (prediction == raw_labels).squeeze()
                 total += raw_labels.size(0)
@@ -97,9 +100,9 @@ class MyImg2Num(object):
             train_log.write(str(epoch_loss)+'\t'+str(vali_loss)+'\n')
 
             # end the epoch when loss is small enough
-            if epoch_loss[epoch] < 0.01:
-                print('The training ends at ' + str(epoch) + ' epochs. \n')
-                break
+            #if epoch_loss[epoch] < 0.01:
+            #    print('The training ends at ' + str(epoch) + ' epochs. \n')
+            #    break
 
         # plot loss vs epoch
         x = range(epoch+1)
