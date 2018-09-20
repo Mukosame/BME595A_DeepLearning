@@ -1,3 +1,4 @@
+import time 
 import numpy as np 
 import torch
 from torch import nn
@@ -39,13 +40,14 @@ class MyImg2Num(object):
     def train(self):
         train_log = open('./log/my_train_log.txt', 'w')
         learning_rate = 0.1
-        max_iteration = 15
+        max_iteration = 20
         batch = self.batch # batch size
         #data_num = 60,000
         #val_num = 10,000
         epoch_loss = np.zeros(max_iteration)
-        vali_loss = epoch_loss
-        acc = epoch_loss
+        vali_loss = np.zeros(max_iteration)
+        acc = np.zeros(max_iteration)
+        train_time = list()
         #optimizer = torch.optim.SGD(self.mynn_model.parameters(), lr = learning_rate)
         #criterion = nn.MSELoss() # returns to the mean loss of a batch
 
@@ -59,6 +61,7 @@ class MyImg2Num(object):
             return torch.mean((pre - tar)**2)
 
         for epoch in range(max_iteration):
+            start_time = time.time()
             running_loss = 0.0        
             # Train and calculate training loss
             for i, data in enumerate(self.trainloader, 0):   
@@ -76,8 +79,10 @@ class MyImg2Num(object):
                 #print(self.mynn.loss)
                 running_loss += self.mynn.loss # output is the mean loss of this batch
                 self.mynn.updateParams(learning_rate)
-            epoch_loss[epoch] = float(running_loss) / (i+1)
-
+            epoch_loss[epoch] = float(running_loss) / len(self.trainset)
+            #print(epoch_loss[epoch])
+            time_spend = time.time() - start_time
+            train_time.append(time_spend)
             # Test loss and accuracy
             val_loss = 0.0
             ## Test the network with test data
@@ -95,29 +100,42 @@ class MyImg2Num(object):
                 val_loss += eval_loss(this_output, labels)
 
             vali_loss[epoch] = float(val_loss) / (i+1)
+            #print(val_loss, i+1)
             acc[epoch] = float(correct) / total
-
-            train_log.write(str(epoch_loss)+'\t'+str(vali_loss)+'\n')
-
+            #print(correct, total, acc[epoch])
+            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + '\n')
+            print(' Epoch {}: Training time={:.2f}s Training Loss={:.4f} Val Loss={:.4f} Acc={:.4f} \n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch]))
             # end the epoch when loss is small enough
             #if epoch_loss[epoch] < 0.01:
             #    print('The training ends at ' + str(epoch) + ' epochs. \n')
             #    break
-
+        
+        print('Average training time = '+ str(np.mean(train_time)) + '\n')
         # plot loss vs epoch
-        x = range(epoch+1)
+        x = np.arange(1,epoch+2)
+        fig1 = plt.figure(1)
         plt.style.use('seaborn-whitegrid')
-        fig = plt.figure()
-        plt.plot(x, epoch_loss[0:epoch], 'bo-', label='Training Loss')
-        plt.plot(x,vali_loss[0:epoch], 'ro-', label = 'Validation Loss')   
+        plt.plot(x, epoch_loss[0:epoch+1], 'bo-', label='Training Loss')
+        plt.plot(x,vali_loss[0:epoch+1], 'ro-', label = 'Validation Loss')   
         plt.xlabel('Epoch')    
         plt.ylabel('Loss')
-        fig.savefig('mynn_loss.jpg', dpi = fig.dpi)
+        plt.legend()
+        fig1.savefig('mynn_loss.jpg', dpi = fig1.dpi)
 
         # plot accuracy vs epoch
+        fig2 = plt.figure(2)
         plt.style.use('seaborn-whitegrid')
-        fig2 = plt.figure()
-        plt.plot(x, acc[0:epoch], 'bo-', label='Test Accuracy')
+        plt.plot(x, acc[0:epoch+1], 'bo-', label='Test Accuracy')
         plt.xlabel('Epoch')    
         plt.ylabel('Test Accuracy')
-        fig.savefig('mynn_acc.jpg', dpi = fig2.dpi)
+        plt.legend()
+        fig2.savefig('mynn_acc.jpg', dpi = fig2.dpi)
+
+        # plot train time vs epoch
+        fig3 = plt.figure(3)
+        plt.style.use('seaborn-whitegrid')
+        plt.plot(x, train_time, 'bo-', label='Train Time')
+        plt.xlabel('Epoch')    
+        plt.ylabel('Training Time')
+        plt.legend()
+        fig3.savefig('mynn_time.jpg', dpi = fig3.dpi)

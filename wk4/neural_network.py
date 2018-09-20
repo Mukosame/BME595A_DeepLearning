@@ -51,7 +51,7 @@ class NeuralNetwork(object):
         # computer average gradient across seen samples, doesn't return anything
         if lossType == 'CE':
             # Use CE loss
-            self.loss = torch.log(torch.sum(torch.exp(prediction))) - torch.sum(prediction.t()*target)
+            self.loss = - torch.sum(torch.log(prediction.t())*target)
             loss_grad = prediction - target#- target + torch.exp(self.prediction) / torch.sum(torch.exp(self.prediction))
         else:
             # Use default MSE loss

@@ -1,5 +1,5 @@
 # perform forward and back-prop using torch.nn
-
+import time
 import numpy as np
 import torch
 import torch.nn as nn
@@ -42,13 +42,14 @@ class NnImg2Num(object):
     def train(self):
         train_log = open('./log/nn_train_log.txt', 'w')
         learning_rate = 0.1
-        max_iteration = 15
+        max_iteration = 20
         batch = self.batch # batch size
         #data_num = 60,000
         #val_num = 10,000
         epoch_loss = np.zeros(max_iteration)
-        vali_loss = epoch_loss
-        acc = epoch_loss
+        vali_loss = np.zeros(max_iteration)
+        acc = np.zeros(max_iteration)
+        train_time = list()
         optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
         criterion = nn.MSELoss() # returns to the mean loss of a batch
 
@@ -59,6 +60,7 @@ class NnImg2Num(object):
             return onehot_label
 
         for epoch in range(max_iteration):
+            start_time = time.time()
             running_loss = 0.0        
             # Train and calculate training loss
             for i, data in enumerate(self.trainloader, 0):   
@@ -75,7 +77,8 @@ class NnImg2Num(object):
                 optimizer.step()
                 running_loss += this_loss.item() #/ batch
             epoch_loss[epoch] = float(running_loss) / (i+1)
-
+            time_spend = time.time() - start_time
+            train_time.append(time_spend)
             # Test loss and accuracy
             val_loss = 0.0
             ## Test the network with test data
@@ -95,27 +98,41 @@ class NnImg2Num(object):
             vali_loss[epoch] = float(val_loss) / (i+1)
             acc[epoch] = float(correct) / total
 
-            train_log.write(str(epoch_loss)+'\t'+str(vali_loss)+'\n')
+            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + '\n')
+            print(' Epoch {}: Training time={:.2f}s Training Loss={:.4f} Val Loss={:.4f} Acc={:.4f} \n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch]))
 
             # end the epoch when loss is small enough
             #if epoch_loss[epoch] < 0.01:
             #    print('The training ends at ' + str(epoch) + ' epochs. \n')
             #    break
 
+        print('Average training time = '+ str(np.mean(train_time)) + '\n')
         # plot loss vs epoch
-        x = range(epoch+1)
+        x = np.arange(1,epoch+2)
+        fig4 = plt.figure(4)
         plt.style.use('seaborn-whitegrid')
-        fig = plt.figure()
-        plt.plot(x, epoch_loss[0:epoch], 'bo-', label='Training Loss')
-        plt.plot(x,vali_loss[0:epoch], 'ro-', label = 'Validation Loss')   
+        plt.plot(x, epoch_loss[0:epoch+1], 'bo-', label='Training Loss')
+        plt.plot(x,vali_loss[0:epoch+1], 'ro-', label = 'Validation Loss')   
         plt.xlabel('Epoch')    
         plt.ylabel('Loss')
-        fig.savefig('ptnn_loss.jpg', dpi = fig.dpi)
+        plt.legend()
+        fig4.savefig('ptnn_loss.jpg', dpi = fig4.dpi)
 
         # plot accuracy vs epoch
+        fig5 = plt.figure(5)
         plt.style.use('seaborn-whitegrid')
-        fig2 = plt.figure()
-        plt.plot(x, acc[0:epoch], 'bo-', label='Test Accuracy')
+        plt.plot(x, acc[0:epoch+1], 'bo-', label='Test Accuracy')
         plt.xlabel('Epoch')    
         plt.ylabel('Test Accuracy')
-        fig.savefig('ptnn_acc.jpg', dpi = fig2.dpi)
+        plt.legend()
+        fig5.savefig('ptnn_acc.jpg', dpi = fig5.dpi)
+
+        # plot train time vs epoch
+        fig6 = plt.figure(6)
+        plt.style.use('seaborn-whitegrid')
+        plt.plot(x, train_time, 'bo-', label='Training Time')
+        plt.xlabel('Epoch')    
+        plt.ylabel('Training Time')
+        plt.legend()
+        fig6.savefig('ptnn_time.jpg', dpi = fig6.dpi)# plot loss vs epoch
+        
