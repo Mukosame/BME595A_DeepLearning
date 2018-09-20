@@ -13,11 +13,11 @@ class MyImg2Num(object):
         # 2 hidden layers: 512 and 64
         # output layer: 10
         self.mynn = NeuralNetwork([784,512,64,10])
-        self.mynn_model = #nn.Sequential(
+        #self.mynn_model = #nn.Sequential(
             #nn.Linear(784, 512), nn.Sigmoid(),
             #nn.Linear(512, 64), nn.Sigmoid(),
             #nn.Linear(64, 10), nn.Sigmoid()
-        )
+        #)
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.trainset = torchvision.datasets.MNIST(root='./data', train = True, download = True, transform = self.transform)
         self.trainloader = torch.utils.data.DataLoader(self.trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
@@ -45,14 +45,17 @@ class MyImg2Num(object):
         epoch_loss = np.zeros(max_iteration)
         vali_loss = epoch_loss
         acc = epoch_loss
-        optimizer = torch.optim.SGD(self.mynn_model.parameters(), lr = learning_rate)
-        criterion = nn.MSELoss() # returns to the mean loss of a batch
+        #optimizer = torch.optim.SGD(self.mynn_model.parameters(), lr = learning_rate)
+        #criterion = nn.MSELoss() # returns to the mean loss of a batch
 
         def onehot(abc):
             onehot_label = torch.zeros(self.batch, 10)
             for i in range(batch):
                 onehot_label[i][abc[i]] = 1 
             return onehot_label
+
+        def eval_loss(pre, tar):
+            return torch.mean((pre - tar)**2)
 
         for epoch in range(max_iteration):
             running_loss = 0.0        
@@ -63,13 +66,13 @@ class MyImg2Num(object):
                 labels = onehot(raw_labels)            
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 # zero the parameter gradients        
-                optimizer.zero_grad()
-                this_output = self.mynn.forward(inputs)
-                this_loss = criterion(this_output, labels)
+                this_output = self.mynn.forward(inputs.view(batch, 728))
+                # backward pass
+                self.mynn.backward(labels, None)
                 # after each batch, update weights
-                this_loss.backward()
-                optimizer.step()
-                running_loss += this_loss.item() #/ batch
+                print(self.mynn.loss)
+                running_loss += self.mynn.loss # output is the mean loss of this batch
+                self.mynn.updateParams(learning_rate)
             epoch_loss[epoch] = float(running_loss) / (i+1)
 
             # Test loss and accuracy
@@ -81,13 +84,13 @@ class MyImg2Num(object):
                 inputs, raw_labels = data
                 inputs, raw_labels = inputs.to(self.device), raw_labels.to(self.device)
                 labels = onehot(raw_labels) 
-                this_output = self.mynn.forward(inputs)
+                this_output = self.mynn.forward(inputs.view(batch,728))
                 _, prediction = torch.max(this_output.data, 1)
                 #c = (prediction == raw_labels).squeeze()
                 total += raw_labels.size(0)
                 correct += (prediction == raw_labels).sum().item()
-                loss = criterion(this_output, labels)
-                val_loss += loss.item()
+                val_loss += eval_loss(this_output, labels)
+
             vali_loss[epoch] = float(val_loss) / (i+1)
             acc[epoch] = float(correct) / total
 

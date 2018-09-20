@@ -15,8 +15,8 @@ class NnImg2Num(object):
         self.batch = 16
         # 2 hidden layers: 512 and 64
         # output layer: 10
-        self.mynn = NeuralNetwork([784,512,64,10])
-        self.mynn_model = nn.Sequential(
+        #self.mynn = NeuralNetwork([784,512,64,10])
+        self.mynn = nn.Sequential(
             nn.Linear(784, 512), nn.Sigmoid(),
             nn.Linear(512, 64), nn.Sigmoid(),
             nn.Linear(64, 10), nn.Sigmoid()
@@ -39,7 +39,7 @@ class NnImg2Num(object):
         return predict_label
 
     def train(self):
-        train_log = open('./log/my_train_log.txt', 'w')
+        train_log = open('./log/nn_train_log.txt', 'w')
         learning_rate = 0.1
         max_iteration = 66
         batch = self.batch # batch size
@@ -48,7 +48,7 @@ class NnImg2Num(object):
         epoch_loss = np.zeros(max_iteration)
         vali_loss = epoch_loss
         acc = epoch_loss
-        optimizer = torch.optim.SGD(self.mynn_model.parameters(), lr = learning_rate)
+        optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
         criterion = nn.MSELoss() # returns to the mean loss of a batch
 
         def onehot(abc):
@@ -109,7 +109,7 @@ class NnImg2Num(object):
         plt.plot(x,vali_loss[0:epoch], 'ro-', label = 'Validation Loss')   
         plt.xlabel('Epoch')    
         plt.ylabel('Loss')
-        fig.savefig('mynn_loss.jpg', dpi = fig.dpi)
+        fig.savefig('ptnn_loss.jpg', dpi = fig.dpi)
 
         # plot accuracy vs epoch
         plt.style.use('seaborn-whitegrid')
@@ -117,4 +117,4 @@ class NnImg2Num(object):
         plt.plot(x, acc[0:epoch], 'bo-', label='Test Accuracy')
         plt.xlabel('Epoch')    
         plt.ylabel('Test Accuracy')
-        fig.savefig('mynn_acc.jpg', dpi = fig2.dpi)
+        fig.savefig('ptnn_acc.jpg', dpi = fig2.dpi)
