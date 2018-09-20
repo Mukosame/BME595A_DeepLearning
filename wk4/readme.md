@@ -60,22 +60,40 @@ By setting it as ```'CE'```, cross-entropy loss is applied:
 Where p is the ground truth, an q is the network output(or, prediction result).
 
 ### myimg2num.py
-This class is used to turn images in mnist (handwritten numbers) into numbers. 
+
+```python
+from myimg2num import MyImg2Num
+```
+
+This class is used to turn images in mnist (handwritten numbers) into numbers. The network is init by ```net = MyImg2Num()```.
 
 To achieve this, we build a 5-layer neural network. The input of this network is 28x28x1 images(which is turned into a 1-D vector: 1 x 784), and the output is the probability of 10 classes.
 
 The structure of this network can be expressed below, including 3 hidden layers:
 
-![Network](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk4/network.jpg "Network Structure")
+<img src="https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk4/network.jpg" alt="Network Structure" width="500"/>
+
+Use ```net.train()``` to start the training process.
 
 To speed up training, we use the NeuralNetwork API in batch mode. Let c be the batch size, so the network's input would be c x 782, and output would be c x 10. The batch size only influence the backward propagation: instead of calculate the gradient one by one, we calculate the average gradient over all samples in this batch, and return the average loss.
 
 After training, it will also give a plot of training loss, and test accuracy, and the time spent on training. All those data would also be written as log file.
 
-This class also has a function: MyImg2Num.forward(input: image), which takes one single image of handwritten number(28 x 28 size), and give the output based on highest score among all classes.
+This class also has a function: ```net.forward(image)``` , which takes one single image of handwritten number(28 x 28 size), and give the output based on highest score among all classes.
 
 ### nnimg2num.py
+
+```python
+from nnimg2num import NnImg2Num
+```
+
 This class achieves the same goal as ```myimg2num.py```, but instead of using our homemade neural network, we apply PyTorch's nn package to build the neural network, and realize the optimization step.
+
+To init the network: ```net = NnImg2Num()```
+
+Traing this network: ```net.train()```
+
+Get number output from input image: ```net.forward(image)```
 
 ## Test Result
 
