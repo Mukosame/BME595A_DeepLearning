@@ -3,12 +3,12 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as F
+import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 
-class LeNet5(nn.module):
+class LeNet5(nn.Module):
     def __init__(self):
         super(LeNet5, self).__init__()
         self.conv1 = nn.Conv2d(1, 6, 5, padding = 2)
@@ -68,13 +68,13 @@ class Img2Num(object):
         acc = np.zeros(max_iteration)
         train_time = list()
         optimizer = torch.optim.SGD(self.net.parameters(), lr = learning_rate)
-        criterion = nn.CrossEntropyLoss() # returns to the mean loss of a batch
+        criterion = nn.MSELoss() # returns to the mean loss of a batch
 
         def onehot(abc):
             onehot_label = torch.zeros(self.batch, 10)
             for i in range(batch):
                 onehot_label[i][abc[i]] = 1 
-            return onehot_label
+            return onehot_label.to(self.device)
 
         for epoch in range(max_iteration):
             start_time = time.time()
@@ -88,6 +88,7 @@ class Img2Num(object):
                 # zero the parameter gradients        
                 optimizer.zero_grad()
                 this_output = self.net(inputs)
+                #print(this_output.type(), labels.type())
                 this_loss = criterion(this_output, labels)
                 # after each batch, update weights
                 this_loss.backward()
@@ -103,10 +104,12 @@ class Img2Num(object):
             total = 0
             for i, data in enumerate(self.testloader, 0):
                 inputs, raw_labels = data
-                inputs, raw_labels = inputs.to(self.device), raw_labels.to(self.device)
+                inputs, raw_labels = inputs.to(self.device), raw_labels.to(self.device)                 
                 labels = onehot(raw_labels) 
-                this_output = self.net.(inputs)
+                #inputs, labels = inputs.to(self.device), labels.to(self.device)
+                this_output = self.net(inputs)
                 _, prediction = torch.max(this_output.data, 1)
+                #print(prediction.type())
                 #c = (prediction == raw_labels).squeeze()
                 total += raw_labels.size(0)
                 correct += (prediction == raw_labels).sum().item()
