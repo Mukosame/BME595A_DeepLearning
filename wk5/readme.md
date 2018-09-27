@@ -47,7 +47,7 @@ To init the network: ```net = Img2Num()```
 
 Traing this network: ```net.train()```
 
-Get number output from one input image: ```net.forward(image)```
+Get number output from one input image: ```net.(image)```
 
 ### img2obj.py
 
@@ -70,7 +70,7 @@ To init the network: ```net = Img2Obj()```
 
 Traing this network: ```net.train()```
 
-Get number output from one input image: ```net.forward(image)```
+Get number output from one input image: ```net(image)```
 
 ## Test Result
 
