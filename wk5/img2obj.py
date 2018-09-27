@@ -41,12 +41,12 @@ class Img2Obj(object):
         self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
         self.mynn = LeNet5().to(self.device)
-        self.net_name = cifar100_lenet5
+        self.net_name = 'cifar100_lenet5'
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-        self.trainset = torchvision.datasets.CIFAR100(root='./data', train = True, download = True, transform = transform)
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
-        self.testset = torchvision.datasets.CIFAR100(root = './data', train = False, download = True, transform = transform)
-        self.testloader = torch.utils.data.DataLoader(testset, batch_size = self.batch, shuffle = False, num_workers = 2)
+        self.trainset = torchvision.datasets.CIFAR100(root='./data', train = True, download = True, transform = self.transform)
+        self.trainloader = torch.utils.data.DataLoader(self.trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
+        self.testset = torchvision.datasets.CIFAR100(root = './data', train = False, download = True, transform = self.transform)
+        self.testloader = torch.utils.data.DataLoader(self.testset, batch_size = self.batch, shuffle = False, num_workers = 2)
         self.classes = ('apples', 'aquarium fish', 'baby', 'bear', 'beaver', 'bed', 'bee', 'beetle', 'bicycle',
                         'bottles', 'bowls', 'boy', 'bridge', 'bus', 'butterfly', 'camel', 'cans', 'castle',
                         'caterpillar',
@@ -69,36 +69,33 @@ class Img2Obj(object):
             plt.imshow(np.transpose(npimg, (1, 2, 0)))
 
         imshow(torchvision.utils.make_grid(img))
-        img = img.to(device)
-        outputs = net(img)
+        img = img.to(self.device)
+        outputs = self.mynn(img)
         _, predicted = torch.max(outputs, 1)
-        print('Predicted: ', ' '.join('%5s' % self.classes[predicted]) 
+        print('Predicted: ', ' '.join('%5s' % self.classes[predicted])) 
 
     def cam(self, idx = 0):
         # load image from webcam and classify it
         cam_img = cv2.VideoCapture(idx)
         while True:
             yes, frame = cam_img.read()
-
             if yes:
                 img = cv2.resize(frame, (32, 32))
                 img = self.transform(img)
-                view(img)
-
+                self.view(img)
             else:
                 print('\n Cannot reading from webcam')
                 break
 
-            if (cv.waitKey(1)):
+            if (cv2.waitKey(1)):
                 break
 
-            cam_img.release()
-            cv.destroyAllWindows()
-        
+        cam_img.release()
+        cv2.destroyAllWindows()        
 
     def forward(self, img):
     # input: [32 x 32 ByteTensor] img
-        output = self.mynn(img)
+        outputs = self.mynn(img)
         _, predicted = torch.max(outputs, 1)
         return self.classes[predicted]
 
@@ -106,7 +103,7 @@ class Img2Obj(object):
         train_log = open('./log/cifar10_train_log.txt', 'w')
         learning_rate = 0.1
         max_iteration = 100
-        batch = self.batch # batch size
+        #batch = self.batch # batch size
 
         epoch_loss = np.zeros(max_iteration)
         vali_loss = np.zeros(max_iteration)
