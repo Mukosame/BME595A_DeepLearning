@@ -3,16 +3,16 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as F
+import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import cv2
 
-class LeNet5(nn.module):
+class LeNet5(nn.Module):
     def __init__(self):
         super(LeNet5, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5, padding = 0)
+        self.conv1 = nn.Conv2d(3, 6, 5, padding = 0)
         self.pool1 = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5, padding = 0)
         self.pool2 = nn.MaxPool2d(2, 2)
@@ -37,7 +37,7 @@ class Img2Obj(object):
     def __init__(self):
         # input: [32 x 32] image
         self.img_size = 32*32
-        self.batch = 16
+        self.batch = 128
         self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
         self.mynn = LeNet5().to(self.device)
@@ -101,15 +101,15 @@ class Img2Obj(object):
 
     def train(self):
         train_log = open('./log/cifar10_train_log.txt', 'w')
-        learning_rate = 0.1
-        max_iteration = 100
+        learning_rate = 1
+        max_iteration = 30
         #batch = self.batch # batch size
 
         epoch_loss = np.zeros(max_iteration)
         vali_loss = np.zeros(max_iteration)
         acc = np.zeros(max_iteration)
         train_time = list()
-        optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
+        optimizer = torch.optim.Adadelta(self.mynn.parameters(), lr = learning_rate, weight_decay=5e-4)
         criterion = nn.CrossEntropyLoss()#nn.MSELoss() # returns to the mean loss of a batch
 
         '''
@@ -166,14 +166,20 @@ class Img2Obj(object):
 
             save_model(self.mynn, '{}_{}.pth'.format(self.net_name, epoch))
 
-            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + '\n')
-            print(' Epoch {}: Training time={:.2f}s Training Loss={:.4f} Val Loss={:.4f} Acc={:.4f} \n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch]))
-
+            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + str(learning_rate) + '\n')
+            print(' Epoch{}: Time={:.2f}s TLoss={:.4f} VaLoss={:.4f} Acc={:.4f} lr={}\n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch], learning_rate))
+            if epoch in [10, 15, 20, 25]:
+                 learning_rate *= 0.1
+            '''
+            if epoch > 0:
+                #print(str(epoch_loss[epoch-1]-epoch_loss[epoch]))
+                if (epoch_loss[epoch-1]-epoch_loss[epoch]) < 0.001*epoch_loss[epoch-1]:
+                    learning_rate *= 0.1
             # end the epoch when loss is small enough
             #if epoch_loss[epoch] < 0.01:
             #    print('The training ends at ' + str(epoch) + ' epochs. \n')
             #    break
-
+            '''
         print('Average training time = '+ str(np.mean(train_time)) + '\n')
         # plot loss vs epoch
         x = np.arange(1,epoch+2)
