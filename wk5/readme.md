@@ -58,9 +58,9 @@ This class can turn input image into its type name (the type must belongs to the
 
 We set the following parameters for training this neural network:
 
-- Epoch Number: 20
+- Epoch Number: 30
 - Loss Function: Cross Entropy Loss
-- Learning Rate: 1
+- Learning Rate: 1(epoch 0~9), 0.1(epoch 10~14), 0.01(epoch 15~19), 0.001(epoch 20~24), 0.0001(epoch 25~29)
 - Batch Size: 128
 - Optimizer: Adadelta
 - Image Normalization: True
@@ -146,10 +146,10 @@ The training time decreases when we set the batch size very large. The training 
 
 After training, we select the model with highest accuracy for visualization:
 
-- At which epoch:
-- Training Loss:
-- Validation Loss:
-- Test Accuracy:
+- At which epoch: 29
+- Training Loss: 2.1595
+- Validation Loss: 3.0493
+- Test Accuracy: 28.95%
 
 When given an image, the output is shown as below:
 
