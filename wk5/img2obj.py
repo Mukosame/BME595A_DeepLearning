@@ -18,7 +18,7 @@ class LeNet5(nn.module):
         self.pool2 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(16*5*5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, 100)
 
     def forward(self, img):
         self.img_size = 32*32
@@ -41,13 +41,26 @@ class Img2Obj(object):
         self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
         self.mynn = LeNet5().to(self.device)
-
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-        trainset = torchvision.datasets.CIFAR10(root='./data', train = True, download = True, transform = transform)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
-        testset = torchvision.datasets.CIFAR10(root = './data', train = False, download = True, transform = transform)
-        testloader = torch.utils.data.DataLoader(testset, batch_size = self.batch, shuffle = False, num_workers = 2)
-        classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+        self.net_name = cifar100_lenet5
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        self.trainset = torchvision.datasets.CIFAR100(root='./data', train = True, download = True, transform = transform)
+        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
+        self.testset = torchvision.datasets.CIFAR100(root = './data', train = False, download = True, transform = transform)
+        self.testloader = torch.utils.data.DataLoader(testset, batch_size = self.batch, shuffle = False, num_workers = 2)
+        self.classes = ('apples', 'aquarium fish', 'baby', 'bear', 'beaver', 'bed', 'bee', 'beetle', 'bicycle',
+                        'bottles', 'bowls', 'boy', 'bridge', 'bus', 'butterfly', 'camel', 'cans', 'castle',
+                        'caterpillar',
+                        'cattle', 'chair', 'chimpanzee', 'clock', 'cloud', 'cockroach', 'kangaroo', 'couch',
+                        'crocodile', 'cups', 'crab', 'dinosaur', 'elephant', 'dolphin', 'flatfish', 'forest', 'girl',
+                        'fox', 'hamster', 'house', 'computer keyboard', 'lamp', 'lawn-mower', 'leopard', 'lion',
+                        'lizard',
+                        'lobster', 'man', 'maple', 'motorcycle', 'mountain', 'mouse', 'mushrooms', 'oak', 'oranges',
+                        'orchids', 'otter', 'palm', 'pears', 'pickup truck', 'pine', 'plain', 'plates', 'poppies',
+                        'porcupine', 'possum', 'rabbit', 'raccoon', 'ray', 'road', 'rocket', 'roses', 'sea', 'seal',
+                        'shark', 'shrew', 'skunk', 'skyscraper', 'snail', 'snake', 'spider', 'squirrel', 'streetcar',
+                        'sunflowers', 'sweet peppers', 'table', 'tank', 'telephone', 'television', 'tiger', 'tractor',
+                        'train', 'trout', 'tulips', 'turtle', 'wardrobe', 'whale', 'willow', 'wolf', 'woman', 'worm'
+                        )
 
     def view(self, img):
         def imshow(img):
@@ -59,39 +72,62 @@ class Img2Obj(object):
         img = img.to(device)
         outputs = net(img)
         _, predicted = torch.max(outputs, 1)
-        print('Predicted: ', ' '.join('%5s' % classes[predicted]) 
+        print('Predicted: ', ' '.join('%5s' % self.classes[predicted]) 
 
-    def cam (self):
+    def cam(self, idx = 0):
         # load image from webcam and classify it
-        img = cv2.
-        view(img)
-        return self.forward(img)
+        cam_img = cv2.VideoCapture(idx)
+        while True:
+            yes, frame = cam_img.read()
+
+            if yes:
+                img = cv2.resize(frame, (32, 32))
+                img = self.transform(img)
+                view(img)
+
+            else:
+                print('\n Cannot reading from webcam')
+                break
+
+            if (cv.waitKey(1)):
+                break
+
+            cam_img.release()
+            cv.destroyAllWindows()
+        
 
     def forward(self, img):
     # input: [32 x 32 ByteTensor] img
-        = self.mynn
-        return predict_label
+        output = self.mynn(img)
+        _, predicted = torch.max(outputs, 1)
+        return self.classes[predicted]
 
     def train(self):
         train_log = open('./log/cifar10_train_log.txt', 'w')
         learning_rate = 0.1
-        max_iteration = 20
+        max_iteration = 100
         batch = self.batch # batch size
-        #data_num = 60,000
-        #val_num = 10,000
+
         epoch_loss = np.zeros(max_iteration)
         vali_loss = np.zeros(max_iteration)
         acc = np.zeros(max_iteration)
         train_time = list()
         optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
-        criterion = nn.CrossEntropyLoss() # returns to the mean loss of a batch
+        criterion = nn.CrossEntropyLoss()#nn.MSELoss() # returns to the mean loss of a batch
 
+        '''
         def onehot(abc):
             onehot_label = torch.zeros(self.batch, 10)
             for i in range(batch):
                 onehot_label[i][abc[i]] = 1 
             return onehot_label
+        '''
+        def save_model(model,filename):
+            state = model.state_dict()
+            for key in state: state[key] = state[key].clone().cpu()    
+            torch.save(state, filename)
 
+        # self.mynn.load_state_dict(torch.load('cifar100_lenet5_0.pth'))
         for epoch in range(max_iteration):
             start_time = time.time()
             running_loss = 0.0        
@@ -121,7 +157,7 @@ class Img2Obj(object):
                 inputs, labels = data
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 #labels = onehot(raw_labels) 
-                this_output = self.mynn.forward(inputs.view(batch, self.img_size))
+                this_output = self.mynn(inputs)
                 _, prediction = torch.max(this_output.data, 1)
                 #c = (prediction == raw_labels).squeeze()
                 total += labels.size(0)
@@ -130,6 +166,8 @@ class Img2Obj(object):
                 val_loss += loss.item()
             vali_loss[epoch] = float(val_loss) / (i+1)
             acc[epoch] = float(correct) / total
+
+            save_model(self.mynn, '{}_{}.pth'.format(self.net_name, epoch))
 
             train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + '\n')
             print(' Epoch {}: Training time={:.2f}s Training Loss={:.4f} Val Loss={:.4f} Acc={:.4f} \n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch]))
