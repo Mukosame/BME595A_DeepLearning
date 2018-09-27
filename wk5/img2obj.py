@@ -33,8 +33,9 @@ class LeNet5(nn.Module):
         x = self.fc3(x)
         return x
 
-class Img2Obj(object):
+class Img2Obj:
     def __init__(self):
+        #super(Img2Obj, self).__init__()
         # input: [32 x 32] image
         self.img_size = 32*32
         self.batch = 128
@@ -61,28 +62,39 @@ class Img2Obj(object):
                         'sunflowers', 'sweet peppers', 'table', 'tank', 'telephone', 'television', 'tiger', 'tractor',
                         'train', 'trout', 'tulips', 'turtle', 'wardrobe', 'whale', 'willow', 'wolf', 'woman', 'worm'
                         )
+        self.load_flag = False
 
     def view(self, img):
+        if self.load_flag == False:        
+            self.mynn.load_state_dict(torch.load('model/cifar100_lenet5_29.pth'))
+            self.load_flag = True
         def imshow(img):
-            img = img / 2 + 0.5 #unnormalize
+            #img = img / 2 + 0.5 #unnormalize
             npimg = img.numpy()
             plt.imshow(np.transpose(npimg, (1, 2, 0)))
 
+        img = cv2.resize(img, (32, 32))
+        img = self.transform(img)
         imshow(torchvision.utils.make_grid(img))
         img = img.to(self.device)
-        outputs = self.mynn(img)
-        _, predicted = torch.max(outputs, 1)
-        print('Predicted: ', ' '.join('%5s' % self.classes[predicted])) 
+        #print(img)
+        imgy = torch.unsqueeze(img, 0)
+        predicted = self.forward(imgy)#.permute(1,2,0))
+        #_, predicted = torch.max(outputs, 1)
+        print('Predicted: ', predicted)#join('%5s' % self.classes[predicted])) 
 
     def cam(self, idx = 0):
+        if self.load_flag == False:        
+            self.mynn.load_state_dict(torch.load('model/cifar100_lenet5_29.pth'))        
+            self.load_flag = True
         # load image from webcam and classify it
         cam_img = cv2.VideoCapture(idx)
         while True:
             yes, frame = cam_img.read()
             if yes:
-                img = cv2.resize(frame, (32, 32))
-                img = self.transform(img)
-                self.view(img)
+                #img = cv2.resize(frame, (32, 32))
+                #img = self.transform(img)
+                self.view(frame)
             else:
                 print('\n Cannot reading from webcam')
                 break
@@ -95,7 +107,7 @@ class Img2Obj(object):
 
     def forward(self, img):
     # input: [32 x 32 ByteTensor] img
-        outputs = self.mynn(img)
+        outputs = self.mynn.forward(img)
         _, predicted = torch.max(outputs, 1)
         return self.classes[predicted]
 
