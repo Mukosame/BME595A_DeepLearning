@@ -7,47 +7,69 @@ import torch.optim as F
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
-from neural_network import NeuralNetwork
+import cv2
+
+class LeNet5(nn.module):
+    def __init__(self):
+        super(LeNet5, self).__init__()
+        self.conv1 = nn.Conv2d(1, 6, 5, padding = 0)
+        self.pool1 = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5, padding = 0)
+        self.pool2 = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(16*5*5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, img):
+        self.img_size = 32*32
+        # input: [28 x 28 ByteTensor] img
+        x = img#torch.view(torch.ByteTensor(img), (-1,self.img_size))
+        # already 28x28 for mnist, reshape to 1 x 784 vector
+        x = self.pool1(F.relu(self.conv1(x)))
+        x = self.pool2(F.relu(self.conv2(x)))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 class Img2Obj(object):
     def __init__(self):
-        # input: 
-        self.img_size = 
+        # input: [32 x 32] image
+        self.img_size = 32*32
         self.batch = 16
+        self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(self.img_size, 24*24, 5)
-        self.pool1 = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(12*12, 8*8, 5)
-        self.pool2 = nn.MaxPool2d(2, 2)
-        self.fc = nn.Linear(500, 10)
+        self.mynn = LeNet5().to(self.device)
 
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         trainset = torchvision.datasets.CIFAR10(root='./data', train = True, download = True, transform = transform)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle = True, num_workers = 2)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch, shuffle = True, num_workers = 2)
         testset = torchvision.datasets.CIFAR10(root = './data', train = False, download = True, transform = transform)
-        testloader = torch.utils.data.DataLoader(testset, batch_size = 4, shuffle = False, num_workers = 2)
+        testloader = torch.utils.data.DataLoader(testset, batch_size = self.batch, shuffle = False, num_workers = 2)
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-        self.device = torch.device("cpu")#torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
-    
+
     def view(self, img):
+        def imshow(img):
+            img = img / 2 + 0.5 #unnormalize
+            npimg = img.numpy()
+            plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
         imshow(torchvision.utils.make_grid(img))
         img = img.to(device)
         outputs = net(img)
         _, predicted = torch.max(outputs, 1)
         print('Predicted: ', ' '.join('%5s' % classes[predicted]) 
 
-    def cam (self, idx):
+    def cam (self):
+        # load image from webcam and classify it
+        img = cv2.
+        view(img)
+        return self.forward(img)
 
     def forward(self, img):
-    # input: [28 x 28 ByteTensor] img
-        x = torch.reshape(torch.ByteTensor(img), (-1,))
-        # already 28x28 for mnist, reshape to 1 x 784 vector
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = x.view(-1, 500)
-        output = self.fc(x)
-        _, predict_label = torch.max(output.data,1)
+    # input: [32 x 32 ByteTensor] img
+        = self.mynn
         return predict_label
 
     def train(self):
@@ -62,7 +84,7 @@ class Img2Obj(object):
         acc = np.zeros(max_iteration)
         train_time = list()
         optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
-        criterion = nn.MSELoss() # returns to the mean loss of a batch
+        criterion = nn.CrossEntropyLoss() # returns to the mean loss of a batch
 
         def onehot(abc):
             onehot_label = torch.zeros(self.batch, 10)
@@ -76,12 +98,12 @@ class Img2Obj(object):
             # Train and calculate training loss
             for i, data in enumerate(self.trainloader, 0):   
                 # each split of batch: i is the batch's index         
-                inputs, raw_labels = data            
-                labels = onehot(raw_labels)            
+                inputs, labels = data            
+                #labels = onehot(raw_labels)            
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 # zero the parameter gradients        
                 optimizer.zero_grad()
-                this_output = self.mynn.forward(inputs.view(batch, self.img_size))
+                this_output = self.mynn(inputs)
                 this_loss = criterion(this_output, labels)
                 # after each batch, update weights
                 this_loss.backward()
@@ -96,14 +118,14 @@ class Img2Obj(object):
             correct = 0
             total = 0
             for i, data in enumerate(self.testloader, 0):
-                inputs, raw_labels = data
-                inputs, raw_labels = inputs.to(self.device), raw_labels.to(self.device)
-                labels = onehot(raw_labels) 
+                inputs, labels = data
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+                #labels = onehot(raw_labels) 
                 this_output = self.mynn.forward(inputs.view(batch, self.img_size))
                 _, prediction = torch.max(this_output.data, 1)
                 #c = (prediction == raw_labels).squeeze()
-                total += raw_labels.size(0)
-                correct += (prediction == raw_labels).sum().item()
+                total += labels.size(0)
+                correct += (prediction == labels).sum().item()
                 loss = criterion(this_output, labels)
                 val_loss += loss.item()
             vali_loss[epoch] = float(val_loss) / (i+1)
@@ -127,7 +149,7 @@ class Img2Obj(object):
         plt.xlabel('Epoch')    
         plt.ylabel('Loss')
         plt.legend()
-        fig1.savefig('ptnn_loss.jpg', dpi = fig4.dpi)
+        fig1.savefig('cifar10_loss.jpg', dpi = fig1.dpi)
 
         # plot accuracy vs epoch
         fig2 = plt.figure(2)
@@ -136,7 +158,7 @@ class Img2Obj(object):
         plt.xlabel('Epoch')    
         plt.ylabel('Test Accuracy')
         plt.legend()
-        fig2.savefig('ptnn_acc.jpg', dpi = fig5.dpi)
+        fig2.savefig('cifar10_acc.jpg', dpi = fig2.dpi)
 
         # plot train time vs epoch
         fig3 = plt.figure(3)
@@ -145,5 +167,4 @@ class Img2Obj(object):
         plt.xlabel('Epoch')    
         plt.ylabel('Training Time')
         plt.legend()
-        fig3.savefig('ptnn_time.jpg', dpi = fig6.dpi)# plot loss vs epoch
-        
+        fig3.savefig('cifar10_time.jpg', dpi = fig3.dpi)# plot loss vs epoch
