@@ -68,23 +68,25 @@ class Img2Obj:
         if self.load_flag == False:        
             self.mynn.load_state_dict(torch.load('model/cifar100_lenet5_29.pth'))
             self.load_flag = True
-        def imshow(img, text):
-            #img = img / 2 + 0.5 #unnormalize
-            npimg = img.numpy()
-            toshow = np.transpose(npimg, (1, 2, 0))
-            cv2.namedWindow(text, cv2.WINDOW_NORMAL)        
-            cv2.resizeWindow(text, 128, 128)  # The viewing height and width of the window is modified        
-            cv2.imshow(text, image_numpy)  # Display the image and its predicted class by the network
-            cv2.waitKey(0)  # Waiting after display
-            cv2.destroyAllWindows()  # Destroy the window
 
-        img = cv2.resize(img, (32, 32))
-        img = self.transform(img)
-        img = img.to(self.device)
-        #print(img)
-        imgy = torch.unsqueeze(img, 0)
+        def imshow(npimg, text):
+            #img = img / 2 + 0.5 #unnormalize
+            #npimg = img.numpy()
+            #toshow = np.transpose(npimg, (1, 2, 0))
+            img = cv2.cvtColor(npimg, cv2.COLOR_RGB2BGR)
+            cv2.namedWindow(text, cv2.WINDOW_NORMAL)        
+            cv2.resizeWindow(text, 256, 256)          
+            cv2.imshow(text,img)  
+            cv2.waitKey(0)  
+            cv2.destroyAllWindows()  
+
+        imgy = cv2.resize(img, (32, 32))
+        imgy = self.transform(imgy)
+        imgy = imgy.to(self.device)
+        #print(imgy)
+        imgy = torch.unsqueeze(imgy, 0)
         predicted = self.forward(imgy)
-        imshow(torchvision.utils.make_grid(img), predicted)
+        imshow(img, predicted)
 
     def cam(self, idx = 0):
         if self.load_flag == False:        
