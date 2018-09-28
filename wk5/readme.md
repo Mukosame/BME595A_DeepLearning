@@ -151,15 +151,16 @@ After training, we select the model with highest accuracy for visualization:
 - Validation Loss: 3.0493
 - Test Accuracy: 28.95%
 
-When given an image, the output is shown as below:
+When given an image(encoded in RGB and turned into numpy array), the output of ```net.view(np_img)``` is shown as below:
 
-todo
+![My time](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk5/view_result.jpg "function view's output")
 
-Since I don't have a webcamera, I cannot show the result related to it.
+Since I don't have a webcamera, I cannot show the result related to it. Generally, the idea is to get the image from webcam and send it to ```net.view```. If the image is loaded correctly, then the result should be the same as above.
 
 ## Summary
 - CIFAR100 is harder to train than MNIST
-- For optimizer: We tried SGD, Adadelta todo. According to [An overview of gradient descent optimization algorithms](http://ruder.io/optimizing-gradient-descent/index.html#adadelta), Adadelta has the fastest converging speed. And my result did show so. But the problem is, the accuracy just stays ~22% after around 5 epochs. No matter how I tried, like decrease the learning rate when the training loss is almost stable, etc, it just doesn't help. So I tried SGD later and divided the learning rate by 10 every 10 epochs. It takes longer time to achieve the similar training loss as Adadelta, but the performance is still not bad. And since all optimizers seem to stay stable after 20 epochs, it doesn't matter so much to chhose which optimizer if our total epoch number is around 20-30.
+- For optimizer: We tried SGD, Adadelta todo. According to [An overview of gradient descent optimization algorithms](http://ruder.io/optimizing-gradient-descent/index.html#adadelta), Adadelta has the fastest converging speed. And my result did show so. But the problem is, the accuracy just stays ~22% after around 5 epochs. No matter how I tried, like decrease the learning rate when the training loss is almost stable, etc, it just doesn't help. So I tried SGD later and divided the learning rate by 10 every 10 epochs. It takes longer time to achieve the similar training loss as Adadelta, but the performance is still not bad. And since all optimizers seem to stay stable after 20 epochs, it doesn't matter so much to chhose which optimizer if our total epoch number is around 20.
+- The loss is still decreasing slowly, which proves the network is truly learning. But due to the limit of time, we stop at epoch 30. It should get better results if give more epochs.
 - For batch size: We tried 16, 32, 64, 132, 256 and 128. It turns out that the best performance for SGD occurs when batch size is around 128.
 - The Nvidia GPU's default fan speed setting is 20%, while the working power setting is adaptive, which would cause the GPU's temperature very, very high when training for long time, and it may cause suddenly shut down. So we should take some methods, such as increasing fan speed or limit GPU power to make sure it won't overheat.
 
