@@ -3,16 +3,16 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as F
+import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import cv2
 
-class LeNet5(nn.module):
+class LeNet5(nn.Module):
     def __init__(self):
         super(LeNet5, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5, padding = 0)
+        self.conv1 = nn.Conv2d(3, 6, 5, padding = 0)
         self.pool1 = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5, padding = 0)
         self.pool2 = nn.MaxPool2d(2, 2)
@@ -33,11 +33,12 @@ class LeNet5(nn.module):
         x = self.fc3(x)
         return x
 
-class Img2Obj(object):
+class Img2Obj:
     def __init__(self):
+        #super(Img2Obj, self).__init__()
         # input: [32 x 32] image
         self.img_size = 32*32
-        self.batch = 16
+        self.batch = 128
         self.device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
 
         self.mynn = LeNet5().to(self.device)
@@ -61,28 +62,44 @@ class Img2Obj(object):
                         'sunflowers', 'sweet peppers', 'table', 'tank', 'telephone', 'television', 'tiger', 'tractor',
                         'train', 'trout', 'tulips', 'turtle', 'wardrobe', 'whale', 'willow', 'wolf', 'woman', 'worm'
                         )
+        self.load_flag = False
 
     def view(self, img):
-        def imshow(img):
-            img = img / 2 + 0.5 #unnormalize
-            npimg = img.numpy()
-            plt.imshow(np.transpose(npimg, (1, 2, 0)))
+        if self.load_flag == False:        
+            self.mynn.load_state_dict(torch.load('model/cifar100_lenet5_29.pth'))
+            self.load_flag = True
 
-        imshow(torchvision.utils.make_grid(img))
-        img = img.to(self.device)
-        outputs = self.mynn(img)
-        _, predicted = torch.max(outputs, 1)
-        print('Predicted: ', ' '.join('%5s' % self.classes[predicted])) 
+        def imshow(npimg, text):
+            #img = img / 2 + 0.5 #unnormalize
+            #npimg = img.numpy()
+            #toshow = np.transpose(npimg, (1, 2, 0))
+            img = cv2.cvtColor(npimg, cv2.COLOR_RGB2BGR)
+            cv2.namedWindow(text, cv2.WINDOW_NORMAL)        
+            cv2.resizeWindow(text, 256, 256)          
+            cv2.imshow(text,img)  
+            cv2.waitKey(0)  
+            cv2.destroyAllWindows()  
+
+        imgy = cv2.resize(img, (32, 32))
+        imgy = self.transform(imgy)
+        imgy = imgy.to(self.device)
+        #print(imgy)
+        imgy = torch.unsqueeze(imgy, 0)
+        predicted = self.forward(imgy)
+        imshow(img, predicted)
 
     def cam(self, idx = 0):
+        if self.load_flag == False:        
+            self.mynn.load_state_dict(torch.load('model/cifar100_lenet5_29.pth'))        
+            self.load_flag = True
         # load image from webcam and classify it
         cam_img = cv2.VideoCapture(idx)
         while True:
             yes, frame = cam_img.read()
             if yes:
-                img = cv2.resize(frame, (32, 32))
-                img = self.transform(img)
-                self.view(img)
+                #img = cv2.resize(frame, (32, 32))
+                #img = self.transform(img)
+                self.view(frame)
             else:
                 print('\n Cannot reading from webcam')
                 break
@@ -95,21 +112,21 @@ class Img2Obj(object):
 
     def forward(self, img):
     # input: [32 x 32 ByteTensor] img
-        outputs = self.mynn(img)
+        outputs = self.mynn.forward(img)
         _, predicted = torch.max(outputs, 1)
         return self.classes[predicted]
 
     def train(self):
         train_log = open('./log/cifar10_train_log.txt', 'w')
-        learning_rate = 0.1
-        max_iteration = 100
+        learning_rate = 1
+        max_iteration = 30
         #batch = self.batch # batch size
 
         epoch_loss = np.zeros(max_iteration)
         vali_loss = np.zeros(max_iteration)
         acc = np.zeros(max_iteration)
         train_time = list()
-        optimizer = torch.optim.SGD(self.mynn.parameters(), lr = learning_rate)
+        optimizer = torch.optim.Adadelta(self.mynn.parameters(), lr = learning_rate, weight_decay=5e-4)
         criterion = nn.CrossEntropyLoss()#nn.MSELoss() # returns to the mean loss of a batch
 
         '''
@@ -166,14 +183,20 @@ class Img2Obj(object):
 
             save_model(self.mynn, '{}_{}.pth'.format(self.net_name, epoch))
 
-            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + '\n')
-            print(' Epoch {}: Training time={:.2f}s Training Loss={:.4f} Val Loss={:.4f} Acc={:.4f} \n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch]))
-
+            train_log.write(str(time_spend) + '\t' + str(epoch_loss[epoch])+'\t'+str(vali_loss[epoch])+ '\t' + str(acc[epoch]) + str(learning_rate) + '\n')
+            print(' Epoch{}: Time={:.2f}s TLoss={:.4f} VaLoss={:.4f} Acc={:.4f} lr={}\n'.format(epoch, time_spend, epoch_loss[epoch], vali_loss[epoch], acc[epoch], learning_rate))
+            if epoch in [10, 15, 20, 25]:
+                 learning_rate *= 0.1
+            '''
+            if epoch > 0:
+                #print(str(epoch_loss[epoch-1]-epoch_loss[epoch]))
+                if (epoch_loss[epoch-1]-epoch_loss[epoch]) < 0.001*epoch_loss[epoch-1]:
+                    learning_rate *= 0.1
             # end the epoch when loss is small enough
             #if epoch_loss[epoch] < 0.01:
             #    print('The training ends at ' + str(epoch) + ' epochs. \n')
             #    break
-
+            '''
         print('Average training time = '+ str(np.mean(train_time)) + '\n')
         # plot loss vs epoch
         x = np.arange(1,epoch+2)
