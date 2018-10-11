@@ -46,19 +46,18 @@ We set the following parameters for training this neural network:
 
 Run ```python3 test.py --model /dir/containing/model/```, and we get the following results:
 
-###CIFAR100
 ####Training and Validation Loss
 
-The training and validation loss over epochs of img2obj(CIFAR100) are shown below:
+The training and validation loss over epochs are shown below:
 
 ![My loss](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk6/train_loss.jpg "training loss")
 
 After training, we select the model with highest accuracy for visualization:
 
-- At which epoch: 29
-- Training Loss: 2.1595
-- Validation Loss: 3.0493
-- Test Accuracy: 28.95%
+- At which epoch: todo
+- Training Loss: 
+- Validation Loss: 
+- Test Accuracy: 
 
 When given an image(encoded in RGB and turned into numpy array), the predicted output of our model is shown as below:
 
