@@ -10,6 +10,8 @@ import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import cv2
+import torchvision.models as models
+import torchvision.datasets as datasets
 
 parser = argparse.ArgumentParser(description='PyTorch AlexNet')
 parser.add_argument('--data', default='/data/', type=str)
@@ -79,9 +81,9 @@ def train(epoch,args):
     total = 0
     batch_idx = 0
     batch = 128#batch size
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    trainset = todo torchvision.datasets.CIFAR100(root='./data', train = True, download = True, transform = transform)
-    trainloader = todo torch.utils.data.DataLoader(trainset, batch_size=batch, shuffle = True, num_workers = 2)
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+    trainset = datasets.ImageFolder(os.path.join(args.data, 'train'), transform=transforms.Compose([transforms.RandomSizedCrop(224), transforms.RandomHorizontalFlip(), transform]))
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch, shuffle=True, num_workers=5)
     for i, data in enumerate(trainloader, 0):
         inputs, targets = data
         if use_cuda: inputs, targets = inputs.to(device), targets.to(device)
@@ -106,33 +108,48 @@ def train(epoch,args):
     return float(train_loss)/(i+1)
 
 def validate(epoch, args):
-    testset = todo
-    testloader = todo
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+    testset = datasets.ImageFolder(os.path.join(args.data, 'test'), transform=transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224), transform]))
+    testloader = torch.utils.data.DataLoader(testset, batch_size=50, shuffle=True, num_workers=5)
     val_loss = 0.0
     ## Test the network with test data
     correct = 0
     total = 0
     for i, data in enumerate(testloader, 0):
         inputs, labels = data
-        inputs, labels = inputs.to(self.device), labels.to(self.device)
+        inputs, labels = inputs.to(device), labels.to(device)
         #labels = onehot(raw_labels) 
-        this_output = self.mynn(inputs)
+        this_output = net(inputs)
         _, prediction = torch.max(this_output.data, 1)
         #c = (prediction == raw_labels).squeeze()
         total += labels.size(0)
         correct += (prediction == labels).sum().item()
         loss = criterion(this_output, labels)
         val_loss += loss.item()
-    return = float(val_loss) / (i+1)
+    return  float(val_loss) / (i+1)
 
 net = AlexNet()
-net.load_state_dict(torch.load('model/todo'))
+alex_pretrained = models.alexnet(pretrained=True)
+# copy weights
+for i,j in zip(net.modules(), alex_pretrained.modules()): 
+    if not list(i.children()):
+        if len(i.state_dict()) > 0:
+            if i.weight.size() == j.weight.size():
+                i.weight.data = j.weight.data
+                i.bias.data = j.bias.data
+#net.load_state_dict(torch.load(alex_pretrained))
+for param in net.parameters():
+    param.requires_grad = False
+for param in net.classifier[6].parameters():
+    param.requires_grad = True
+    #only update classifier
 net.cuda()
 criterion = nn.CrossEntropyLoss()
 
 max_iteration = 20
 print('start: time={}'.format(dt()))
 epoch_loss = np.zeros(max_iteration)
+vali_loss = np.zeros(max_iteration)
 for epoch in range(0, max_iteration):
     if epoch in [0,10,15,18]:
         if epoch!=0: args.lr *= 0.1
