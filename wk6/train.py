@@ -14,12 +14,12 @@ import torchvision.models as models
 import torchvision.datasets as datasets
 
 parser = argparse.ArgumentParser(description='PyTorch AlexNet')
-parser.add_argument('--data', default='/data/', type=str)
-parser.add_argument('--save', default='/model/', type=str)
+parser.add_argument('--data', default='data/', type=str)
+parser.add_argument('--save', default='model/', type=str)
 args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-lr = 0.01
+learning_rate = 0.001
 
 def printoneline(*argv):
     s = ''
@@ -36,7 +36,7 @@ def save_model(model,filename):
     for key in state: state[key] = state[key].clone().cpu()    
     torch.save(state, args.save+filename)
 
-class AlexNet(nn.module):
+class AlexNet(nn.Module):
     def __init__(self):
         super(AlexNet, self).__init__()
         self.features = nn.Sequential(
@@ -82,7 +82,7 @@ def train(epoch,args):
     batch_idx = 0
     batch = 128#batch size
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
-    trainset = datasets.ImageFolder(os.path.join(args.data, 'train'), transform=transforms.Compose([transforms.RandomSizedCrop(224), transforms.RandomHorizontalFlip(), transform]))
+    trainset = datasets.ImageFolder(os.path.join(args.data, 'train'), transform=transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transform]))
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch, shuffle=True, num_workers=5)
     for i, data in enumerate(trainloader, 0):
         inputs, targets = data
@@ -95,7 +95,6 @@ def train(epoch,args):
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
-        outputs = outputs[0] # 0=cos_theta 1=phi_theta
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
@@ -109,7 +108,7 @@ def train(epoch,args):
 
 def validate(epoch, args):
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
-    testset = datasets.ImageFolder(os.path.join(args.data, 'test'), transform=transforms.Compose([transforms.Scale(256), transforms.CenterCrop(224), transform]))
+    testset = datasets.ImageFolder(os.path.join(args.data, 'test'), transform=transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transform]))
     testloader = torch.utils.data.DataLoader(testset, batch_size=50, shuffle=True, num_workers=5)
     val_loss = 0.0
     ## Test the network with test data
@@ -143,7 +142,7 @@ for param in net.parameters():
 for param in net.classifier[6].parameters():
     param.requires_grad = True
     #only update classifier
-net.cuda()
+net.to(device)
 criterion = nn.CrossEntropyLoss()
 
 max_iteration = 20
@@ -152,8 +151,8 @@ epoch_loss = np.zeros(max_iteration)
 vali_loss = np.zeros(max_iteration)
 for epoch in range(0, max_iteration):
     if epoch in [0,10,15,18]:
-        if epoch!=0: args.lr *= 0.1
-        optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+        if epoch!=0: learning_rate *= 0.1
+        optimizer = optim.Adam(net.classifier[6].parameters(), lr=learning_rate)
 
     epoch_loss[epoch] = train(epoch,args)
     vali_loss[epoch] = validate(epoch, args)
