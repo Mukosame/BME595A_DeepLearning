@@ -1,10 +1,49 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import argparse, os, sys
 #import matplotlib.pyplot as plt
 import cv2
-from train import AlexNet
 import torchvision.transforms as transforms
+
+class AlexNet(nn.Module):
+    def __init__(self):
+        super(AlexNet, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),  # performs ReLU operation on the conv layer ouput in place
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192, 384, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, 200)
+        )
+
+    def forward(self, input):
+        """
+        Defines the forward computation performed at every call by defined AlexNet network
+        """
+        out = self.features(input)
+        out = out.view(out.size(0), -1)  # linearized the output of the module 'features'
+        out = self.classifier(out)
+        out = F.softmax(out)  # apply softmax activation function on the output of the module 'classifier'
+        return out
 
 parser = argparse.ArgumentParser(description='PyTorch AlexNet')
 parser.add_argument('--model', default='model/', type=str)
@@ -12,25 +51,13 @@ args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
-def build_class_dict():
-    protocol = '/data/tiny-imagenet-200/words.txt'
-    class_dict = {}
-    with open(protocol) as f:
-        id_label_lines = f.readline()
-    for line in id_label_lines:
-        l = line.replace('\n','').split('\t')
-        word_label = l[1].split(',')
-        class_dict[l[0]] = word_label[0].rstrip()
-    f.close()
-    return class_dict
+
 
 def extract_class_name(wtf, class_dict):
     class_name = {}
-    for i in wtf:
-        for j, k in class_dict.items():
-            if i == j:
-                class_name[j] = k
-                continue
+    #print(wtf)
+    if wtf in class_dict:
+        class_name = class_dict[wtf]
     return class_name
 
 
@@ -40,7 +67,12 @@ class TestNet:
         # load saved model
         filepath = os.path.join(args.model, 'AlexNet_19.pth')
         if os.path.isfile(filepath):
-            self.net.load_state_dict(torch.load(filepath))
+            saved = torch.load(filepath)
+            self.net.load_state_dict(saved['model'])
+            self.num2class = saved['num2class']
+            #print(self.num2class)
+            self.class_dict = saved['class_dict']
+            #print(self.class_dict)
         else:
             print('No such model \n')
             sys.exit(0)
@@ -49,7 +81,8 @@ class TestNet:
         input = torch.unsqueeze(img.type(torch.FloatTensor), 0)
         outputs = self.net(input)
         _, prediction = torch.max(outputs, 1)
-        return extract_class_name(prediction.data[0], class_dict)
+        #print(prediction.data[0])
+        return extract_class_name(self.num2class[prediction.data[0]], self.class_dict)
 
     def view(self, img):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
@@ -63,10 +96,11 @@ class TestNet:
             cv2.resizeWindow(text, 512, 512)
             cv2.putText(img, text, (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 100), 5, cv2.LINE_AA)          
             cv2.imshow(text,cvimg)  
-            #cv2.waitKey(1)  
-            #cv2.destroyAllWindows()  
+            #if cv2.waitKey(1):  
+                #cv2.destroyAllWindows()  
         tensorimg = preprocess(img)
         prediction = self.forward(tensorimg)
+        print(prediction+'\n')
         imshow(img, prediction)
 
     def cam(self, idx = 0):
@@ -89,8 +123,8 @@ class TestNet:
 
 
 
-class_dict = build_class_dict()
+
 test_net = TestNet()
-sample_img = cv2.imread('neko.jpg')
-test_net.view(sample_img)
-#test_net.cam()
+#sample_img = cv2.imread('neko.JPEG')
+#test_net.view(sample_img)
+test_net.cam()

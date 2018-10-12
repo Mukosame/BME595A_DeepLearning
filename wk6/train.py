@@ -31,9 +31,21 @@ def printoneline(*argv):
 def dt():
     return datetime.datetime.now().strftime('%H:%M:%S')
 
-def save_model(model,filename):
-    state = model.state_dict()
-    for key in state: state[key] = state[key].clone().cpu()    
+def build_class_dict():
+    protocol = args.data + 'words.txt'
+    class_dict = {}
+    with open(protocol) as f:
+        id_label_lines = f.readlines()
+    for line in id_label_lines:
+        l = line.replace('\n','').split('\t')
+        #print(l)
+        word_label = l[1].split(',')
+        #print(word_label[0].rstrip())
+        class_dict[l[0]] = word_label[0].rstrip()
+    f.close()
+    return class_dict
+
+def save_model(state,filename):  
     torch.save(state, args.save+filename)
 
 class AlexNet(nn.Module):
@@ -71,18 +83,16 @@ class AlexNet(nn.Module):
         out = self.features(input)
         out = out.view(out.size(0), -1)  # linearized the output of the module 'features'
         out = self.classifier(out)
-        out = F.softmax(out)  # apply softmax activation function on the output of the module 'classifier'
+        out = F.softmax(out, dim=None)  # apply softmax activation function on the output of the module 'classifier'
         return out
 
-def train(epoch,args):
+def train(epoch, trainset, args):
     net.train()
     train_loss = 0
     correct = 0
     total = 0
     batch_idx = 0
     batch = 128#batch size
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
-    trainset = datasets.ImageFolder(os.path.join(args.data, 'train'), transform=transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transform]))
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch, shuffle=True, num_workers=5)
     for i, data in enumerate(trainloader, 0):
         inputs, targets = data
@@ -100,16 +110,16 @@ def train(epoch,args):
         correct += predicted.eq(targets.data).cpu().sum()
 
         printoneline(dt(),'Te=%d Loss=%.4f | AccT=%.4f%% (%d/%d) %.4f'
-            % (epoch,train_loss/(batch_idx+1), 100.0*correct/total, correct, total, 
+            % (epoch,train_loss/(batch_idx+1), 100.0*float(correct)/total, correct, total, 
             loss.item()))
         batch_idx += 1
     print('')
     return float(train_loss)/(i+1)
-
+'''
 def validate(epoch, args):
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
     testset = datasets.ImageFolder(os.path.join(args.data, 'test'), transform=transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transform]))
-    testloader = torch.utils.data.DataLoader(testset, batch_size=50, shuffle=True, num_workers=5)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=10, shuffle=False, num_workers=5)
     val_loss = 0.0
     ## Test the network with test data
     correct = 0
@@ -126,7 +136,7 @@ def validate(epoch, args):
         loss = criterion(this_output, labels)
         val_loss += loss.item()
     return  float(val_loss) / (i+1)
-
+'''
 net = AlexNet()
 alex_pretrained = models.alexnet(pretrained=True)
 # copy weights
@@ -145,18 +155,26 @@ for param in net.classifier[6].parameters():
 net.to(device)
 criterion = nn.CrossEntropyLoss()
 
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+trainset = datasets.ImageFolder(os.path.join(args.data, 'train'), transform=transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transform]))
+
 max_iteration = 20
+class_dict = build_class_dict()
+num2class_dict = trainset.classes
+
 print('start: time={}'.format(dt()))
 epoch_loss = np.zeros(max_iteration)
 vali_loss = np.zeros(max_iteration)
 for epoch in range(0, max_iteration):
-    if epoch in [0,10,15,18]:
+    if epoch in [0,11,15]:
         if epoch!=0: learning_rate *= 0.1
         optimizer = optim.Adam(net.classifier[6].parameters(), lr=learning_rate)
 
-    epoch_loss[epoch] = train(epoch,args)
-    vali_loss[epoch] = validate(epoch, args)
-    save_model(net, '{}_{}.pth'.format('AlexNet',epoch))
+    epoch_loss[epoch] = train(epoch, trainset, args)
+    #vali_loss[epoch] = validate(epoch, args)
+    net_tosave =  net.state_dict()
+    for key in net_tosave: net_tosave[key] = net_tosave[key].clone().cpu()
+    save_model({'model': net_tosave, 'num2class': num2class_dict, 'class_dict': class_dict}, '{}_{}.pth'.format('AlexNet',epoch))
 print('finish: time={}\n'.format(dt()))
 
 # plot loss vs epoch
@@ -164,7 +182,7 @@ x = np.arange(1,epoch+2)
 fig1 = plt.figure(1)
 plt.style.use('seaborn-whitegrid')
 plt.plot(x, epoch_loss[0:epoch+1], 'bo-', label='Training Loss') 
-plt.plot(x,vali_loss[0:epoch+1], 'ro-', label = 'Validation Loss')    
+#plt.plot(x,vali_loss[0:epoch+1], 'ro-', label = 'Validation Loss')    
 plt.xlabel('Epoch')    
 plt.ylabel('Loss')
 plt.legend()
