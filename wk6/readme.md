@@ -26,17 +26,17 @@ python3 train.py --data /tiny/imagenet/dir/ --save /dir/to/save/model/
 ```
 The structure of AlexNet is shown below:
 
-![AlexNet](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk6/AlexNet.jpg "AlexNet")
+![AlexNet](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk6/AlexNet.JPG "AlexNet")
 
-To start with, we load the pretrained model in PyTorch and then train based on it.
+To start with, we load the pretrained model in PyTorch and then train the last classifier layer based on it.
 
 We set the following parameters for training this neural network:
 
 - Epoch Number: 20
 - Loss Function: MSE
-- Learning Rate: 0.01
-- Batch Size: todo
-- Optimizer: SGD
+- Start Learning Rate: 0.001, decrease by 10 at epoch 11, 15
+- Batch Size: 128
+- Optimizer: Adam
 - Image Normalization: True
 - Trained on: single GPU (Nvidia Quadro M6000)
 
@@ -54,19 +54,19 @@ The training and validation loss over epochs are shown below:
 
 After training, we select the model with highest accuracy for visualization:
 
-- At which epoch: todo
-- Training Loss: 
-- Validation Loss: 
-- Test Accuracy: 
+- At which epoch: 18
+- Training Loss: 4.9497
+- Training Accuracy: 35.7900%
 
 When given an image(encoded in RGB and turned into numpy array), the predicted output of our model is shown as below:
 
-![My time](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk6/view_result.jpg "Custom image's output")
+![Test image's output](https://github.com/Mukosame/BME595A_DeepLearning/blob/master/wk6/view_result.jpg "Test image's output")
 
 Since I don't have a webcamera, I cannot show the result related to it. Generally, the idea is to get the image from webcam and send it to ```net.view```. If the image is loaded correctly, then the result should be the same as above.
 
 ## Summary
 - By loading the pretrained model as the initial value, we can ensure the training loss is in a reasonable range and thus greatly save the time of training
+- When saving the weights, we should pay attention to the convert between cuda.Tensor and Tensor
 
 ## Reference
 - Krizhevsky, Alex, Ilya Sutskever, and Geoffrey E. Hinton. "Imagenet classification with deep convolutional neural networks." Advances in neural information processing systems. 2012.
