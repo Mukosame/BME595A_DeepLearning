@@ -6,6 +6,7 @@ import argparse, os, sys
 #import matplotlib.pyplot as plt
 import cv2
 import torchvision.transforms as transforms
+import pyscreenshot
 
 class AlexNet(nn.Module):
     def __init__(self):
@@ -86,18 +87,20 @@ class TestNet:
 
     def view(self, img):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
-        preprocess = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.CenterCrop(224), transform])
+        preprocess = transforms.Compose([transforms.ToPILImage(), transforms.Resize(224), transform])
         def imshow(cvimg, text):
             #img = img / 2 + 0.5 #unnormalize
             #npimg = img.numpy()
             #toshow = np.transpose(npimg, (1, 2, 0))
             #cvimg = cv2.cvtColor(npimg, cv2.COLOR_RGB2BGR)
             cv2.namedWindow(text, cv2.WINDOW_NORMAL)        
-            cv2.resizeWindow(text, 512, 512)
-            cv2.putText(img, text, (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 100), 5, cv2.LINE_AA)          
+            #cv2.resizeWindow(text, 512, 512)
+            cv2.putText(img, text, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)          
             cv2.imshow(text,cvimg)  
-            #if cv2.waitKey(1):  
-                #cv2.destroyAllWindows()  
+            #cv2.waitKey(1)
+            #im = pyscreenshot.grab()
+            #im.save('view_result.jpg')
+            #cv2.destroyAllWindows()  
         tensorimg = preprocess(img)
         prediction = self.forward(tensorimg)
         print(prediction+'\n')
